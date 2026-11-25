@@ -7,7 +7,7 @@ index a12473b..9780717 100644
  
  add_custom_command(OUTPUT control.nacp
 -                   COMMAND ${NACPTOOL} --create "${PROJECT_NAME}" "endrift" "${VERSION_STRING}" control.nacp)
-+                   COMMAND ${NACPTOOL} --create "Zero Mission Expandido" "Joao (hack) / mGBA por endrift" "0.1" control.nacp)
++                   COMMAND ${NACPTOOL} --create "Zero Mission Expandido" "Joao - hack sobre mGBA de endrift" "0.1" control.nacp)
  
  add_custom_command(OUTPUT romfs.bin
                     COMMAND ${CMAKE_COMMAND} -E make_directory romfs
