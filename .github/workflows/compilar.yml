@@ -1,0 +1,54 @@
+# Compila o app "Zero Mission Expandido" (.nro) nos servidores do GitHub.
+# Roda a cada push e também pelo botão "Run workflow" na aba Actions.
+# O .nro fica disponível como artefato da execução e no branch "build-output".
+name: Compilar app do Switch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - name: Baixar este repositório
+        uses: actions/checkout@v4
+
+      - name: Baixar o mGBA 0.10.5 e aplicar as mudanças do app
+        run: |
+          git config --global --add safe.directory '*'
+          git clone --depth 1 --branch 0.10.5 https://github.com/mgba-emu/mgba.git mgba
+          cd mgba
+          git apply ../zm-expandido-switch.patch
+          cp ../icon.jpg src/platform/switch/icon.jpg
+
+      - name: Compilar
+        run: |
+          cd mgba
+          mkdir -p build-switch && cd build-switch
+          cmake -DCMAKE_TOOLCHAIN_FILE=../src/platform/switch/CMakeToolchain.txt -DCMAKE_BUILD_TYPE=Release ..
+          make -j"$(nproc)"
+          cp "$(find . -name mgba.nro | head -n1)" "$GITHUB_WORKSPACE/zm-expandido.nro"
+          ls -la "$GITHUB_WORKSPACE/zm-expandido.nro"
+
+      - name: Guardar o .nro como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: zm-expandido-nro
+          path: zm-expandido.nro
+
+      - name: Publicar o .nro no branch build-output
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan build-output
+          git rm -rf --cached . > /dev/null
+          git add -f zm-expandido.nro
+          git commit -m "Build de ${GITHUB_SHA}"
+          git push -f origin build-output
